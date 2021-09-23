@@ -86,3 +86,7 @@ this 关键字
 new 运算符
 - new 运算符并不一定会总是成功，当内存不足时，会抛出运行时异常。
 `java.lang.OutOfMemoryError: Java heap space`
+
+```java
+{{#include code/ch03/New.java}}
+```

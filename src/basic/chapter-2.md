@@ -114,7 +114,7 @@ int a, b = 4, d, e;
 - 逻辑运算符：! & ^ |  && ||
 - 赋值运算符：=
 - 速记赋值运算符： op=，其中 op 可以是任何二元运算符。
-  `var op= val;` 等效于 `var = var op val`;
+  `var op= val;` 等效于 `var = (T)(var op val)`，其中 T 是 var 的类型;
 
 还有其他运算符：成员运算符、方法调用运算符、类型转换、三目、逗号、instanceof
 
@@ -155,7 +155,16 @@ s1 + s2; // 结果是int类型，因为先提升为int
 
 byte b1 = 2, b2 = 3;
 byte b3 = (byte)(b1 + b2);// 这里必须强转，否则编译报错
+
+// 复合赋值运算符不用强转的
+// PS：想强转也没有地方写
+byte b4 = 1;
+b4 += 5;  // b4 变为 6
 ```
+> A compound assignment expression of the form E1 op= E2 is equivalent to
+E1 = (T)((E1) op (E2)), where T is the type of E1, except that E1 is evaluated
+only once.
+
 ## 附：静态类型/动态类型；强类型/弱类型
 唉，看完这些，更不会区分动静态类型了。
 

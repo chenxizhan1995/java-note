@@ -46,7 +46,7 @@ class ClassName{
   - 引用变量
   - 引用变量和基本类型变量赋值的区别
 ```java
-{{#include code/ch03/SquareDemo.java}}
+{{#include ../code/ch03/SquareDemo.java}}
 ```
 
 示例：SquareDemo2
@@ -55,7 +55,7 @@ class ClassName{
 - 据点运算符访问方法
 - 方法的调用形式
 ```java
-{{#include code/ch03/SquareDemo2.java}}
+{{#include ../code/ch03/SquareDemo2.java}}
 ```
 ````java
 type methodName(parameters){
@@ -88,5 +88,5 @@ new 运算符
 `java.lang.OutOfMemoryError: Java heap space`
 
 ```java
-{{#include code/ch03/New.java}}
+{{#include ../code/ch03/New.java}}
 ```

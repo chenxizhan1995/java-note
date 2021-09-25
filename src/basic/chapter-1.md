@@ -2,7 +2,7 @@
 ## hello-world
 
 ```java
-{{#include code/Hello.java}}
+{{#include ../code/Hello.java}}
 ```
 - 程序入口：Java 整个程序的入口是 main() 方法，有固定格式：`public static void main(String[] args){}`
 

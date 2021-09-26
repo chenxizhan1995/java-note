@@ -11,9 +11,12 @@
   - [类、对象和方法](basic/chapter-4.md)
   - [其它数据类型与运算符](basic/chapter-5.md)
   - [方法和类详解](basic/chapter-6.md)
+  - [继承](basic/chapter-7.md)
+
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
-
+  - [重载、重写、隐藏](basic/misc/重写-重载-隐藏.md)
+  - [fianl 字段的初始化时机和限制？](final-init.md)
 - [Servlet](servlet/Readme.md)
 
 # 专题知识

@@ -10,6 +10,7 @@
   - [程序控制语句](basic/chapter-3.md)
   - [类、对象和方法](basic/chapter-4.md)
   - [其它数据类型与运算符](basic/chapter-5.md)
+  - [方法和类详解](basic/chapter-6.md)
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
 

@@ -1,6 +1,6 @@
 [book]
 authors = ["chenxizhan"]
-language = "en"
+language = "zh-CN"
 multilingual = false
 src = "src"
 title = "java-note"
@@ -8,3 +8,7 @@ title = "java-note"
 [output.html]
 site-url="https://github.com/chenxizhan1995/java-note.git"
 git-repository-url="https://github.com/chenxizhan1995/java-note.git"
+
+[output.html.fold]
+enable=true
+level=1

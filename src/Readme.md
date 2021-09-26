@@ -11,15 +11,48 @@
 </details>
 
 ## 领域知识粗略划分
-- 系统知识
-  - 基础知识：Java 基础：语法和类库
-  - Java Servlet
-  - 技术栈：Tomcat + Spring MVC + MyBatis 技术栈
+- Java 语法基础
+
+  系统复习 Java 基础语法和最基础的类库
+
+  - 数据类型
+  - 控制流
+  - 初步认识类、对象、继承
+  - 集合框架（基础）
+  - io（基础）
+  - 泛型（基础）
+
+  * Java 选择 JDK8 学习。JDK 11 也在看。
+
+- Java 高级语法
+
+  *本没有基础、高级之分，常用的、容易理解的叫基础，不常用、不好理解的叫高级*
+  - 集合框架
+  - io
+  - 泛型
+  - 反射
+  - 注解
+  - 并发
+
+上面两个是学习基础，下面是实际开发相关的。
+
+- Servlet
+  * 最好先学习日志，再看 servlet，方便调试
+- Tomcat + Spring MVC + MyBatis
+  * Tomcat 选择 Tomcat 9 + JDK 8
+
 - 专题知识 <span title="各种类库、常见任务的处理" class="note">Info</span>
-    - JOSN 处理：fastjson、gson
-    - Excel 文档：
-    - HTTP 请求：
+  - 开发和调试工具
+    - IDEA、Eclipse
+    - Maven、Gradle
+  - 日志：JDKLog、commons logging、log4j、slf4j、logback
+  - JOSN 处理：fastjson、gson
+  - Excel 文档
+  - HTTP 请求
+
 - 随手笔记
+  - TODO: 加载资源文件和类路径
+  - TODO: tomcat 中的日志
 
   某个具体的问题、知识点、实战案例。单独一篇文章就可以讲清楚的东西。
 

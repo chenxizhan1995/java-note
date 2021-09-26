@@ -12,7 +12,11 @@
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
 
-- [Servlet](Readme.md)
+- [Servlet](servlet/Readme.md)
 
 # 专题知识
+- [日志](subject/log/Readme.md)
+  - [JDKLog](subject/log/jdk-log.md)
 # 随手笔记
+
+- [Tomcat 中的日志](misc/tomcat-logging.md)

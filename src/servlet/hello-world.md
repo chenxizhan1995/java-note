@@ -251,8 +251,36 @@ package: cc.xizhan.demo
 File -> Open，选择路径 F:\java\servlet\servlet-hello，其下有个 pom.xml，选择它，
 open as project 搞定。
 IDEA 会自动识别 Maven 项目的类型，开启对应的特性支持。
+
 ### IDEA 配置本地部署
 方便开发调试。
 
 略。
+
+## IDEA 创建 web 项目（Maven）
+maven 骨架创建的 web 项目，其 web.xml 是基于 2.3 的，比较老旧。
+另外，pom.xml 中也没有指定 servlet api 依赖。
+
+使用 IDEA 创建 Maven Web 项目。
+File | New | Project，选择 Java EE，项目模板选择 Webapplication，下一步，确认 Specification 选择了 Servlet 4.0.1。
+
+与 Maven 创建的 web 项目相比，IDEA 创建的，主要有如下两点：
+1. POM 中有 servlet-api 依赖
+```xml
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>4.0.1</version>
+    <scope>provided</scope>
+</dependency>
+```
+2. web.xml 文件头
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+</web-app>
+```
 

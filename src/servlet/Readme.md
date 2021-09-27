@@ -14,6 +14,7 @@ Filter用到了责任链模式，Listener用到了观察者模式，Servlet用�
 
 软件版本：JDK 8，Tomcat 9。
 Tomcat 9.0.x 对应 Servlet Spec 4.0。
+
 ## misc
 - Q. 关于 HttpServlet.service() 方法的 httpRequest 和 httpResponse，使用上有什么惯例和限制？
 - Q. URL 映射规则？
@@ -51,7 +52,18 @@ Tomcat 9.0.x 对应 Servlet Spec 4.0。
                     version="4.0">
     </web-app >
     ```
+
+- url 到 servlet 的映射关系
+- url-pattern 规则
+- servlet 4.0 引入了注解配置，注解和xml相比有哪些优缺点？
+  - 对于简单映射关系，注解更方便
+  - 对于复杂配置，还是在 xml 中更合适
+
+- @WebServlet
+  servlet 3.0 开始引入注解方式配置url映射。相关注解都在 javax.servlet.annotation 包中。
+
 ## 参考
 [servlet的本质是什么，它是如何工作的？ - 知乎](https://www.zhihu.com/question/21416727)
-[javax.servlet.http (Java(TM) EE 8 Specification APIs)](https://javaee.github.io/javaee-spec/javadocs/javax/servlet/http/package-summary.html)
 [Java EE](https://javaee.github.io/)
+[标准文档 | Servlet 规范 4.0](https://jcp.org/aboutJava/communityprocess/final/jsr369/index.html)
+[另一个标准文档 | Servlet 4.0 API doc](https://javaee.github.io/javaee-spec/javadocs/javax/servlet/package-summary.html)

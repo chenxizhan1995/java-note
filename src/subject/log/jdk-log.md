@@ -24,11 +24,14 @@ Handler 负责发布日志（输出到某个IO流），发布前可以先用 For
 <details><summary>
 客户端代码调用 Logger 对象输出日志，每个 Logger 对象有设置一个日志级别，所有低于此级别的日志，Logger 对象都会忽略。
 </summary>
+
 > As stated earlier, client code sends log requests to Logger objects. Each logger keeps track of a log level that it is interested in, and discards log requests that are below this level.
 </details>
+
 <details><summary>
 Logger 是命名实体，名字使用句点分隔，由此构成树状名称空间，此名称空间一般与 java 的包名称空间一致，但不是必须的。
 </summary>
+
 > Loggers are normally named entities, using dot-separated names such as "java.awt". The namespace is hierarchical and is managed by the LogManager. The namespace should typically be aligned with the Java packaging namespace, but is not required to follow it slavishly. For example, a Logger called "java.awt" might handle logging requests for classes in the java.awt package, but it might also handle logging for classes in sun.awt that support the client-visible abstractions defined in the java.awt package.
 </details>
 
@@ -37,10 +40,13 @@ Logger 是命名实体，名字使用句点分隔，由此构成树状名称空�
 
 <details><summary>
 每个 Logger 有一个父 Logger, 名为 "" 的 Logger 是根, 它没有父 Logger. 匿名 Logger 以根Logger为父. Logger 从父logger继承各种属性，特别地：
+
 - 日志级别：如果 Logger 自身的级别设置为 null，则沿着树向上追溯，使用第一个不是 null 的级别作为自身的有效级别。ps：如果自己设置了，当然就使用自己的。
 - handler：默认，logger 会把自己的日志传递个父 Logger 的handler，如此递归，直到根 Logger。
 - 资源包名：如果logger 自身资源包名设置为 null，则沿着树向上追溯，使用第一个不是 null 的资源包名作为自身的有效资源包名。
+
 </summary>
+
 > Loggers keep track of their parent loggers in the logging namespace. A logger's parent is its nearest extant ancestor in the logging namespace. The root Logger (named "") has no parent. Anonymous loggers are all given the root logger as their parent. Loggers may inherit various attributes from their parents in the logger namespace. In particular, a logger may inherit:
 > - Logging level. If a Logger's level is set to be null then the Logger will use an effective Level that will be obtained by walking up the parent tree and using the first non-null Level.
 > - Handlers. By default a Logger will log any output messages to its parent's handlers, and so on recursively up the tree.
@@ -66,6 +72,7 @@ Logger 定义了一大批日志输出方法，为了方便使用，还对每个�
 使用静态方法 LogManager.getLogManager 可以获取这个唯一的 LogManager 对象。
 ps：大意是这里提供了应用程序替换默认 LogManager 的接口。
 </summary>
+
 > There is a single LogManager object that can be retrieved using the static LogManager.getLogManager method. This is created during LogManager initialization, based on a system property. This property allows container applications (such as EJB containers) to substitute their own subclass of LogManager in place of the default class.
 </details>
 
@@ -81,6 +88,7 @@ Ans: 看看 LogManager 的描述再说？
 <details><summary>
 初始配置可以指定特定 logger 的日志级别，此级别对该 logger 及其子 logger 生效。
 </summary>
+
 > The initial configuration may specify levels for particular loggers. These levels are applied to the named logger and any loggers below it in the naming hierarchy. The levels are applied in the order they are defined in the configuration file.
 </details>
 
@@ -88,6 +96,7 @@ Ans: 看看 LogManager 的描述再说？
 初始配置可以包含任意属性，供 handler 或者负责日志的子系统使用。按约定，这属性应当以 handler 类的全限定名或者子系统的主 logger 的全限定名开头。
 例如 MemoryHandler 使用属性 "java.util.logging.MemoryHandler.size" 控制内存缓冲区的大小。
 </summary>
+
 > The initial configuration may contain arbitrary properties for use by Handlers or by subsystems doing logging. By convention these properties should use names starting with the name of the handler class or the name of the main Logger for the subsystem.
 
 > For example, the MemoryHandler uses a property "java.util.logging.MemoryHandler.size" to determine the default size for its ring buffer.

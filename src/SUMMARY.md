@@ -12,6 +12,7 @@
   - [其它数据类型与运算符](basic/chapter-5.md)
   - [方法和类详解](basic/chapter-6.md)
   - [继承](basic/chapter-7.md)
+  - [包和接口](basic/chapter-8.md)
 
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)

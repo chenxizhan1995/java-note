@@ -609,48 +609,6 @@ ps：Tomcat 默认编码是什么？
 开发者可以调用这个方法指定容器解析请求数据时使用的编码，必须在读取 request 的任何
 数据之前设置，否则设置的编码不会生效。
 
-Q. 请求中如果指定了编码，容器会相应编码吗？
-测试一下。
-```bash
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -d name=中国
-
-现象：响应数据正常；服务器日志输出乱码（A）
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-  -d name=中国
-现象：响应数据乱码（？？？），服务器日志是另一种乱码（B）
-说明 charset 设置有效果。
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-  --data-urlencode name=中国
-现象：响应数据乱码（？？？），服务器日志是第二种乱码（B）
-说明发送的数据是否使用url编码，无所谓。
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=GBK" \
-  --data-urlencode name=中国
-现象：响应数据乱码（？？？），服务器日志正常
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=GBK" \
-  -d name=中国
-现象：响应数据乱码（？？？），服务器日志正常
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=GBK" \
-  -H "Accept-Charset: UTF-8; q=1" \
-  -d name=中国
-现象：响应数据乱码（？？？），服务器日志正常
-说明 Accept-Charset 对 tomcat 不管用。
-
-curl "localhost:8080/servlet-hello/parameter-demo" \
-  -H "Content-Type: application/x-www-form-urlencoded; charset=GBK" \
-  -H "Accept-Charset: GBK; q=1" \
-  -d name=中国
-```
 ## 3.13 请求对象的生存周期
 request 对象的生存周期仅限于 service() 执行过程中，或者某个 filter 的 doFilter
 方法内。
@@ -660,8 +618,75 @@ request 对象的生存周期仅限于 service() 执行过程中，或者某个 
 应用程序保留 request 对象的引用，直到生命周期结束仍然保留，是未定义的行为，不要这么干。
 
 # 4. Servlet 上下文
+## 4.1  接口 ServletContext 简介
+ServletContext 为 servlet 提供了所在 web app 的视图。servlet 容器厂商负责提供
+此接口的具体实现。servlet 可以用 ServletContext 对象输出日志、获取资源的URL路径、
+读写属性（与同一个容器内的其它servlet交换数据）。
 
+每个 ServletContext 对应于 web 服务器的一条路径。例如，某个 servlet context 可能
+绑定在 http://example.com/catalog，所有以 /catalog 开头的请求都将由此 servlet
+context 处理。
+## 4.2 ServletContext 对象的作用域
+一个 servlet 容器内的每个 web app 对应唯一一个 ServletContext 实例。对于分布式
+servlet 容器，web app 在每个 JVM 实例上将有一个 ServletContext 实例。
+
+不属于任何一个 web app 的 servlet 隐含属于默认 web app，这个默认 web app 有一个
+默认 servlet context。即使在分布式部署环境下，这个默认的 servlet context 也只
+可以有一个实例，只在一个 JVM 上。
+
+> Servlets in a container that were not deployed as part of a Web application are
+implicitly part of a “default” Web application and have a default ServletContext. In
+a distributed container, the default ServletContext is non-distributable and must
+only exist in one JVM.
+
+Q. 如何找找这个默认 Servlet Context？
+## 4.3 初始化参数
+ServletContext 接口提供如下方法，供 servlet 获取 web app 的初始配置参数。
+- getInitParameter
+- getInitParameterNames
+
+初始化参数的用途：为方便开发者设置启动信息。
+> Initialization parameters are used by an Application Developer to convey setup
+information. Typical examples are a Webmaster’s e-mail address, or the name of a
+system that holds critical data.
+
+## 4.4 配置方法
+自 servlet 3.0，在 ServletContext 添加了一些方法，提供编程定义 servlet、filter、对应
+的 url 模板的功能。
+这些方法只能在 app 初始化过程中调用。
+ServletContextListener.contexInitialized, ServletContainerInitializer.onStartup。
+
+这些方法对编程框架很有用。
+……
+
+## 4.5 上下文属性
+ServletContext 接口提供如下方法操作属性：
+- setAttribute
+- getAttribute
+- getAttributeNames
+- removeAttribute
+## 4.6 资源
+ServletContext 接口的
+- getResource
+- getResourceAsStream
+一些路径规则映射规则……
+
+这两个方法，接收以 / 开头的资源路径，然后到上下文的根路径或者 WEB-INF/lib 下的jar包内的
+META-INF/resources/ 为起点寻找资源。
+
+先到上下文根路径找，找不到才去jar包中找。jar包中的路径，还有一些规则。
+
+## 4.7 多个主机和上下文
+如果服务器支持虚拟主机特性，则每个虚拟主机要有各自的 web 上下文集合，各个虚拟主机
+之间的上下文集合不可共享。
+
+ServletContext.getVirtualServerName() 方法可以获取 ServletContext 所在的逻辑主机
+的名称。同一个逻辑主机内的所有上下文对象取得的主机名必须相同，必须具备持久性，必须
+是具备唯一性，必须和服务器配置有关联性。
+
+## 4.8 重载上下文的考虑
 # 5. 响应
+
 # 6. 过滤
 # 7. 会话
 # 8. 注解和可插拔性

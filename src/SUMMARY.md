@@ -13,14 +13,15 @@
   - [方法和类详解](basic/chapter-6.md)
   - [继承](basic/chapter-7.md)
   - [包和接口](basic/chapter-8.md)
-
+  - [异常处理](basic/chapter-9-异常处理.md)
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
   - [重载、重写、隐藏](basic/misc/重写-重载-隐藏.md)
-  - [fianl 字段的初始化时机和限制？](final-init.md)
+  - [fianl 字段的初始化时机和限制？](basic/misc/final-init.md)
 - [Servlet](servlet/Readme.md)
   - [hello-world](servlet/hello-world.md)
   - [servlet 4.0](servlet/note-servlet-4.0.md)
+  - [servlet 编码](servlet/note-encoding.md)
 # 专题知识
 - [日志](subject/log/Readme.md)
   - [JDKLog](subject/log/jdk-log.md)

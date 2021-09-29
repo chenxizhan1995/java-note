@@ -12,3 +12,5 @@ the class in which it is declared, or a compile-time error occurs (§8.7, §16.8
 A blank final instance variable must be definitely assigned at the end of every
 constructor of the class in which it is declared, or a compile-time error occurs (§8.8,
 §16.9).
+
+A blank final is a final variable whose declaration lacks an initializer.

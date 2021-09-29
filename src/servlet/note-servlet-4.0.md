@@ -685,6 +685,13 @@ ServletContext.getVirtualServerName() 方法可以获取 ServletContext 所在�
 是具备唯一性，必须和服务器配置有关联性。
 
 ## 4.8 重载上下文的考虑
+？没看懂。
+有一些和classloader 相关的东西。我不会。
+### 4.8.1 临时工作目录
+容器厂商必须为每个容器实例提供一个私有临时目录，通过上下文属性 javax.servlet.context.tempdir
+暴露给开发者，且此属性必须是 java.io.File 类型。
+servlet 上下文重启时，servlet 容器不需要确保临时目录的内容，但要确保其内容不会被
+其它context访问到。
 # 5. 响应
 
 # 6. 过滤

@@ -693,18 +693,187 @@ ServletContext.getVirtualServerName() 方法可以获取 ServletContext 所在�
 servlet 上下文重启时，servlet 容器不需要确保临时目录的内容，但要确保其内容不会被
 其它context访问到。
 # 5. 响应
+response 对象保存了所有要返回给客户端的数据。在HTTP协议下，这些数据通过 HTTP 首部
+和消息体传输给客户端。
+## 5.1 缓冲
+servlet 容器可以不提供缓冲。但如果提供了缓冲，就要遵守如下约定。
+
+ServletResponse 定义了如下方法供开发者获取换成信息。
+- getBufferSize()   返回底层缓冲区大小，单位 byte，如果没有缓冲，则返回 int 值 0.
+- setBufferSize()
+- isCommited()
+- reset()
+- resetBuffer()
+- flushBuffer()
+
+servlet 可以通过 setBufferSize 设置缓冲区大小，容器需要提供大于等于要求的尺寸的缓冲。
+在使用 respose 的 Writer 和/或 ServletOutputStream 写入任何数据之前调用
+setBufferSize 方法才有效，否则抛出 IllegalStateException。
+
+> The method must be called before any content is written using a ServletOutputStream
+or Writer. If any content has been written or the response object has been
+committed, this method must throw an IllegalStateException.
+
+isCommited 方法查询是否向客户端返回了任何字节的数据。flushBuffer 用于刷新缓冲，把
+数据立即发送给客户端。
+
+reset 和 resetBuffer 的作用。
+
+> The reset method clears data in the buffer when the response is not committed.
+Headers, status codes and the state of calling getWriter or getOutputStream set
+by the servlet prior to the reset call must be cleared as well. The resetBuffer
+method clears content in the buffer if the response is not committed without clearing
+the headers and status code.
+If the response is committed and the reset or resetBuffer method is called, an
+IllegalStateException must be thrown. The response and its associated buffer will
+be unchanged.
+
+一旦向客户端实际发送了数据，状态就变为 commited。
+> When using a buffer, the container must immediately flush the contents of a filled
+buffer to the client. If this is the first data that is sent to the client, the response is
+considered to be committed.
+
+## 5.2 首部
+HttpServletResponse 提供如下方法操作响应的首部。
+- setHeader()   设置首部，若已存在同名首部，会清除它们
+- addHeader()   设置首部，若已存在同名首部，保留；若不存在同名首部，创建。
+
+为了方便，提供了设置 int 和 Date 类型首部的快捷方法
+- setIntHader()
+- addIntHeader()
+- setDateHeader()
+- addDateHeader()
+
+设置首部的时机。
+要是首部（除了 trailers）生效，必须在 response 对象提交之前设置首部，响应提交之后
+提交的首部被忽略。
+trailer 稍特殊。
+> If HTTP trailer, as specified in
+RFC 7230, are to be sent in the response, they must be provided using the
+setTrailerFields() method on HttpServletResponse. This method must have
+been called before the last chunk in the chunked response has been written.
+
+servlet 开发者需要负责为响应设置适当的 Context-Type 首部。禁止 servlet 容器为
+Content-Type 提供默认设置，在 servlet 没有设置 Content-Type 时。
+http/1.1 允许省略 Content-Type。
+
+建议容器通过 X-Powered-By 首部提供实现信息。例如：
+```
+X-Powered-By: Servlet/4.0
+X-Powered-By: Servlet/4.0 JSP/2.3 (GlassFish Server Open Source
+Edition 5.0 Java/Oracle Corporation/1.8)
+```
+容器应当提供配置项，以禁用这个首部。
+
+## 5.3 HTTP Trailer
+trailer 是在 http 消息体之后发送的特殊首部。
+容器提供相关操作方法。
+……
+## 5.4 非阻塞IO
+非阻塞 IO 仅允许在异步处理中使用。
+并提供了一系列相关方法。
+
+## 5.5 快捷方法
+HttpServletResponse 接口提供两个快捷方法 sendRedirect，sendError。
+
+重定向和反馈错误信息的快捷方法。方法会设置适当的首部和消息内容。
+
+只有响应提交前才能调用这两个方法，如果已经提交，容器必须抛出 IllegalStateException。
+
+调用这两个方法之后，会提交并终止响应，此后写入响应的数据会被忽略。
+## 5.6 国际化
+servlet 需要设置响应的 locale 和 字符集。
+
+### locale
+
+可以调用 ServletResponse.setLocale() 方法设置 locale。可以多次调用，但只有在
+响应提交之前调用才有效。
+
+如果响应提交之前，servlet没有设置 locale，则使用容器的默认 locale 作为响应的
+locale，但这种情形容器无需告知客户端使用的locale设置（如 Content-Language 首部）。
+
+Q. 容器的默认 locale 是什么？
+### 编码
+```xml
+<locale-encoding-mapping-list>
+  <locale-encoding-mapping>
+    <locale>ja</locale>
+    <encoding>Shift_JIS</encoding>
+  </locale-encoding-mapping>
+</locale-encoding-mapping-list>
+```
+response-character-encoding 元素可以显式设置整个 web app 中所有响应的默认编码。
+```xml
+<response-character-encoding>UTF-8</response-character-encoding>
+```
+如果既没有配置 response-character-encoding 元素，也没有对应的 mapping，则 setLocale
+使用依赖于容器的映射。调用 setCharacterEncoding, setContentType, setLocale 可以
+调整响应的编码，这些方法可以多次调用，调用响应的 getWriter() 或者响应提交之后调用
+上述三个方法是不会影响响应的编码的。setContentType 设置编码的前提是设置的内容类型
+中指定了编码（ps：text/plain; charset=utf-8）。setLocale 方法设置编码的前提是尚未
+调用过 setContentType 或 setCharacterEncoding 方法设置编码。
+PS：如果调用了 setLocale、setContnetType 或者 setCharacterEncoding 之一设置了编码，
+是不是就会覆盖 response-character-encoding 的设置了？
+
+> If neither element exists or does not provide a mapping, setLocale uses a container
+dependent mapping. The setCharacterEncoding, setContentType, and setLocale
+methods can be called repeatedly to change the character encoding. Calls made after
+the servlet response’s getWriter method has been called or after the response is
+committed have no effect on the character encoding. Calls to setContentType set the
+character encoding only if the given content type string provides a value for the
+charset attribute. Calls to setLocale set the character encoding only if neither
+setCharacterEncoding nor setContentType has set the character encoding before.
+
+在响应提交后或者调用 getWriter() 方法之后设置编码，无效。
+
+如果没有有效的编码设置，会使用 IOS-8859-1。
+
+只要协议允许，容器就必须把响应使用的locale和编码告知客户端。在HTTP协议中，使用
+Content-Language 首部告知locale，使用Content-Type告知编码，但如果servlet没有
+设置响应的 content-type，就无法将编码告知客户端。
+> Containers must communicate the locale and the character encoding used for the
+servlet response’s writer to the client if the protocol in use provides a way for doing
+so. In the case of HTTP, the locale is communicated via the Content-Language
+header, the character encoding as part of the Content-Type header for text media
+types. Note that the character encoding cannot be communicated via HTTP headers
+if the servlet does not specify a content type; however, it is still used to
+encode text written via the servlet response’s writer.
+
+## 5.7 response 对象的关闭
+当响应对象关闭之后，容器必须立即将响应中缓存的数据刷新到客户端。
+当如下事件之一满足时，认为 servlet 已完成对请求的处理且响应对象可以被关闭:
+- servlet 的 service 方法退出
+- setContentLength 和 setConentLengthLong 设置了大于零的数值，同时已经向响应
+  对象写入了不小于这个数值的数据
+- 调用了 sendError
+- 调用了 sendRedirect
+- 在异步处理中调用了 complete
+
+## 5.8 response 对象的生命周期
+每个response对象仅在 servlet.service() 方法或者 filter 的 doFilter 方法内有效，
+除非是异步处理过程，异步处理，则直到 AysncContext.complete() 方法之后失效。
+> Each response object is valid only within the scope of a servlet’s service method, or
+within the scope of a filter’s doFilter method, unless the associated request object
+has asynchronous processing enabled for the component. If asynchronous processing
+on the associated request is started, then the response object remains valid until
+complete method on AsyncContext is called. Containers commonly recycle response
+objects in order to avoid the performance overhead of response object creation. The
+developer must be aware that maintaining references to response objects for which
+startAsync on the corresponding request has not been called, outside the scope
+described above may lead to non-deterministic behavior.
 
 # 6. 过滤
+
 # 7. 会话
-# 8. 注解和可插拔性
-# 9. 请求转发
+# 8. 注解和可插拔性 *
+# 9. 请求转发 *
 dispatching request
-# 10. web 应用
+# 10. web 应用 *
 # 11. 应用生命周期事件
 
-# 12. 把请求映射到servlet
+# 12. 把请求映射到servlet *
 # 13. 安全性
-# 14. 部署描述符
+# 14. 部署描述符 *
 # 15. 与其它相关规范的要求
 Requirements related to other Specifications
 # 附. 修订记录

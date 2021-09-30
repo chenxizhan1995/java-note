@@ -863,9 +863,260 @@ startAsync on the corresponding request has not been called, outside the scope
 described above may lead to non-deterministic behavior.
 
 # 6. 过滤
+过滤器是一种 Java 组件，可以在请求到资源和资源到客户端的时候对首部和消息体做处理。
 
+servlet 提供了轻量级过滤器框架。它描述了如何配置过滤器，以及过滤器的使用约定和
+实现语义。
+
+过滤器的API可从在线文档查阅，配置过滤器的语法在本文档的“部署描述符”章节介绍。
+## 6.1 过滤器是什么？
+……
+
+过滤器可以过滤动态和静态资源，本章用 web resources 指代这两者。
+
+...
+### 6.1.1 过滤组件示例
+- ■ Authentication filters
+- ■ Logging and auditing filters
+- ■ Image conversion filters
+- ■ Data compression filters
+- ■ Encryption filters
+- ■ Tokenizing filters
+- ■ Filters that trigger resource access events
+- ■ XSL/T filters that transform XML content
+- ■ MIME-type chain filters
+- ■ Caching filters
+## 6.2 主要概念
+本节描述过滤器的主要概念。
+
+开发者通过实现 javax.servlet.Filter 接口创建过滤器，过滤器要有一个无参构造函数。
+
+在 web.xml 中用 filter 元素声明过滤器。用 filter-mapping 将过滤器映射到指定的
+servlet（使用servlet的逻辑名称）或者一组servlet/资源（通过url模式），过滤器
+就会在需要的时候调用。
+
+### 6.2.1 过滤器的生命周期
+web app 启动后，提供服务之前，必须为每个filter声明找到对应的类，创建实例，调用其
+init(FilterConfig config) 方法，初始化时filter可以抛出异常，表示无法提供服务，
+如果异常是 UnavailableException，容器可选择在一段时间之后重新创建过滤器，如果不是
+永久不可用。
+
+部署描述符中每个过滤器声明，在每个容器的每个 JVM 中有且仅有一个 filter 实例。
+
+当容器收到请求，先调用过滤器列表中的第一个过滤器的 doFilter 方法，传入
+ServletRequest、ServletResponse、FilterChain 三个对象，
+过滤器的 doFilter() 方法一般可以实现下述过程的全部或一部分。
+1. 检测请求首部
+2. 对 request 封装
+3. 对 response 封装
+4. 调用过滤器链中的下一个实体。如果当前就是最后一个节点，则下一个实体就是目标资源。
+   通过调用 FilterChain.doFilter() 方法调用下一个实体，调用时传入 request和response对象。
+
+   容器负责提供 FilterChain 的实现对象，实现的 FilterChain 的 doFilter 方法必须
+   定位链中的下一个实体并调用它的 doFilter 方法，同时传入合适的参数。
+   ...
+   service 方法必须和链上的所有过滤器都必须在同一个线程中执行。
+5. 调用完下一个实体之后，过滤器可以对响应进行处理
+6. 或者，过滤器也可以抛出异常，表示处理出错。UnavailableException。
+   出错后，容器不得尝试沿链继续执行。容器可以稍后重新触发整个过滤器链，如果异常
+   不是持久异常。
+7. 链中最后一个过滤器执行后，下一个节点就是目标servlet或者目标资源。
+8. 容器卸载过滤器时，需先调用过滤器的 doFilter 方法。
+
+---
+
+1. 在一个 Web 应用程序中可以注册多个 Filter 程序，每个 Filter 程序都可以对一个或一组
+Servlet 程序进行拦截。如果有多个 Filter 程序都可以对某个 Servlet 程序的访问过程进行拦截，
+当针对该 Servlet 的访问请求到达时，Web 容器将把这多个 Filter 程序组合成一个 Filter 链（也叫过滤器链）。
+2. Filter 链中的各个 Filter 的拦截顺序与它们在 web.xml 文件中的映射顺序一致，上一个
+  Filter.doFilter 方法中调用 FilterChain.doFilter 方法将激活下一个 Filter的doFilter 方法，
+  最后一个 Filter.doFilter 方法中调用的 FilterChain.doFilter 方法将激活目标 Servlet的service 方法。
+3. 只要 Filter 链中任意一个 Filter 没有调用 FilterChain.doFilter 方法，目标 Servlet 的 service 方法都不会被执行。
+
+### 6.2.2 包装请求和响应
+过滤器可以封装请求和响应，如此实现强大的过滤功能。
+容器不得更改对象，下一个节点收到的 request/response 对象必须和前一个节点传入的对象是同一个对象。
+……
+### 6.2.3 过滤器环境
+部署描述符的 init-params 元素可以为过滤器设置初始参数，通过 FilterConfig 接口的
+getInitParameter 和 getInitParamerNames 方法可以获取这些参数。FilterConfig 同时
+提供对 ServletContext 的访问。
+> A Filter and the target servlet or resource at the end
+of the filter chain must execute in the same invocation thread.
+
+### 6.2.4 配置过滤器
+定义过滤器的方式有两种：@WebFilter 注解和部署描述符中的 filter 元素，开发者在此元素中
+指定 filter-name、filter-class、init-params。还可以为工具操作配置其它信息（图标、
+文档描述）。
+容器要确保为每个过滤器声明创建一个过滤器实例。所以如果对同一个过滤器类定义两个
+过滤器声明，就会有两个实例。
+```xml
+<filter>
+  <filter-name>Image Filter</filter-name>
+  <filter-class>com.example.ImageServlet</filter-class>
+</filter>
+```
+
+在声明过滤器之后，汇编器使用 filter-mapping 确定每个web资源对应的过滤器。
+可以使用 servlet-name 把过滤器映射到指定的 servlet，可以用 url-pattern 把过滤器
+映射到指定的资源集合。
+```xml
+<filter-mapping>
+  <filter-name>Image Filter</filter-name>
+  <servlet-name>ImageServlet</servlet-name>
+</filter-mapping>
+```
+```xml
+<filter-mapping>
+  <filter-name>Logging Filter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+Q. 同一个过滤器可以对应多个 filter-mapping 吗？
+
+url 模板映射规则在后面有说明。
+对于到给定 uri 请求，过滤器在链中的顺序，规则如下：
+1. 先找到匹配的 url-pattern 对应的过滤器，按在部署描述符中定义的顺序，
+2. 再使用 servlet-name 对应的过滤器，按在部署描述符中定义的顺序，
+
+如果一个 servlet-mapping 同时包含 servlet-name 和 url-pattern 子元素，则容器必须
+把它展开为多个 servlet-mapping 元素，保持顺序不变。
+> If a filter mapping contains both `<servlet-name>` and `<url-pattern>`, the container
+must expand the filter mapping into multiple filter mappings (one for each
+`<servlet-name>` and `<url-pattern>`), preserving the order of the `<servlet-name>`
+and `<url-pattern>` elements.
+例如，
+```xml
+<filter-mapping>
+  <filter-name>Multiple Mappings Filter</filter-name>
+  <url-pattern>/foo/*</url-pattern>
+  <servlet-name>Servlet1</servlet-name>
+  <servlet-name>Servlet2</servlet-name>
+  <url-pattern>/bar/*</url-pattern>
+</filter-mapping>
+```
+等价于
+```xml
+<filter-mapping>
+  <filter-name>Multipe Mappings Filter</filter-name>
+  <url-pattern>/foo/*</url-pattern>
+</filter-mapping>
+<filter-mapping>
+  <filter-name>Multipe Mappings Filter</filter-name>
+  <servlet-name>Servlet1</servlet-name>
+</filter-mapping>
+<filter-mapping>
+  <filter-name>Multipe Mappings Filter</filter-name>
+  <servlet-name>Servlet2</servlet-name>
+</filter-mapping>
+<filter-mapping>
+  <filter-name>Multipe Mappings Filter</filter-name>
+  <url-pattern>/bar/*</url-pattern>
+</filter-mapping>
+```
+
+预期高性能 web app 要缓存过滤器链，避免重复计算。
+
+### 6.2.5 过滤器和请求转发
+servlet 2.4 的新特性，可以配置过滤器在 dispatcher 的 forward 和 include 调用中生效。
+
+通过 servlet-mapping 元素中的 dispatch 元素指定生效范围
+1. REQUEST：仅过滤直接来气客户端的请求
+2. FORWARE：仅过滤 dispather 的 forward 转发到的资源请求
+3. INCLUDE：仅过滤 dispather 的 include 转发到的资源请求
+4. ERROR：仅过滤请求出错，错误页面处理机制时的资源请求
+5. ASYNC：仅过滤异步处理过程中的转发请求
+6. 上述1，2，3，4，5的任意组合。
+```xml
+<filter-mapping>
+  <filter-name>Logging Filter</filter-name>
+  <url-pattern>/products/*</url-pattern>
+  <dispatcher>FORWARD</dispatcher>
+  <dispatcher>REQUEST</dispatcher>
+</filter-mapping>
+```
 # 7. 会话
-# 8. 注解和可插拔性 *
+http 是无状态协议，会话跟踪又是 web app 的重要功能。有多种会话管理机制，但用起来都
+比较复杂。为此定义 HttpSession 接口，封装底层细节。
+
+## 7.1 会话跟踪机制
+### 7.1.1 基于 cookie
+这是最广泛使用的会话跟踪技术。
+
+servlet 容器必须支持基于 cookie 的会话技术。
+容器跟踪会话，使用的 cookie 的名字必须是 JSESSIONID，容器可以允许开发者配置 cookie
+的名字。
+
+容器必须提供配置会话跟踪 cookie 为 HttpOnly 的选项。
+### 7.1.2 SSL 会话
+HTTPS 构建在 TSL 之上，TSL 自身有会话相关信息，基于此可以轻易构建会话。
+### 7.1.3 URL 重写
+这是使用最少的会话跟踪技术。
+当客户端不接受cookie 时，此技术可作为替补。会话id必须以 jsessionid 作为参数名。
+```
+http://www.example.com/catalog/index.html;jsessionid=1234
+```
+ps：url中分号是 param
+
+当cookie和ssl会话技术可以用的时候，不得使用URL重写技术。
+### 7.1.4 会话集成
+对于不支持cookie的 HTTP 客户端容器必须提供会话支持，为了满足这一要求，容器通常会
+支持基于URL重写的会话技术。
+## 7.2 创建会话
+容器要支持会话，需要客户端配合，若客户端不支持、不愿支持会话，容器是无法后一个请求
+和前一个请求联系到一起的。开发者必须考虑到这种情况，开发的app必须能处理这种情形。
+
+javax.servlet.http.HttpSession.getId() 可以获取会话id，
+javax.servlet.http.HttpServletRequest.changeSessionId() 可以修改会话id。
+## 7.3 会话作用域
+HttpSession 对象的作用域必须是 web app 级别（也就是 servlet context 级别）的。
+多个 servlet context 的会话id可以相同，但其它信息不得共享（比如属性设置、对象引用）。
+
+## 7.4 在会话中绑定属性
+可以在 HttpSession 上绑定属性。
+
+监听会话属性。通过 HttpSessionBindingListener 接口的 valueBound 和 valueUnbound 方法。
+方法 valueBound 必须在 HttpSession.getAttribute 方法可以读取到属性之前调用；
+valueUnbound 必须在 HttpSession.getAttribute 方法无法再获取到属性之后调用。
+## 7.5 会话超时
+HTTP 协议没有定义会话终止信息，所以服务端无法得知客户端何时下线，所以唯一的终止
+会话途径是超时。
+
+会话的默认超时时间由容器定义，且可通过 ServletContext.getSessionTimeOut 方法或者
+HttpSession.getMaxInactiveTnterval 获取，前者以分钟为单位，后者是秒。
+对应有 setXxx 方法用于设置会话超时时间。
+
+当会话到达超时时间后，必须等待此会话所有的 servlet 方法执行完成后才能删除会话。
+
+## 7.6 最后访问时间
+
+> The getLastAccessedTime method of the HttpSession interface allows a servlet to
+determine the last time the session was accessed before the current request. The
+session is considered to be accessed when a request that is part of the session is first
+handled by the servlet container.
+
+## 7.7 会话的重要语义
+### 7.7.1 多线程
+容器负责确保多个线程读写session属性时的线程安全问题，开发则负责属性对象本身的
+线程安全问题。
+
+必须假定从 request 或 response 获取的对象不是线程安全的，包括但不限于：
+ServletResponse.getWriter() 获得的 PrintWriter 对象，
+ServletResponse.getOutputStream() 活得的 OutputStream 对象。
+
+### 7.7.2 分布式环境
+web app 可以是分布式的。
+
+……过
+### 7.7.3 客户端语义
+
+> Due to the fact that cookies or SSL certificates are typically controlled by the Web
+browser process and are not associated with any particular window of the browser,
+requests from all windows of a client application to a servlet container might be part
+of the same session. For maximum portability, the Developer should always assume
+that all windows of a client are participating in the same session.
+
+# 8. 注解和可插拔性
 # 9. 请求转发 *
 dispatching request
 # 10. web 应用 *

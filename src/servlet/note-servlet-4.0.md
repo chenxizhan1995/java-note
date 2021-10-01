@@ -1109,7 +1109,7 @@ web app 可以是分布式的。
 
 ……过
 ### 7.7.3 客户端语义
-
+开发者必须假定同一个客户端的多个窗口属于同一个会话。
 > Due to the fact that cookies or SSL certificates are typically controlled by the Web
 browser process and are not associated with any particular window of the browser,
 requests from all windows of a client application to a servlet container might be part
@@ -1117,6 +1117,139 @@ of the same session. For maximum portability, the Developer should always assume
 that all windows of a client are participating in the same session.
 
 # 8. 注解和可插拔性
+本章介绍注解以及其它增强特性，用于增强框架和代码库的可插拔性。
+
+## 8.1 注解和可插拔性
+
+WEB-INF/classes 目录下的类或者 WEB-INF/lib 下的jar包内的注解才会处理。
+还会受到 web.xml 中 metadata-comple 元素的控制。
+若 metadata-complete 为 true，则必须忽略WEB-INF/classes和WEB-INF/lib下的所有注解
+> If the value of the “metadata-complete” attribute is specified as true, the
+deployment tool must ignore any annotations that specify such deployment
+information in the class files packaged in the web application；
+若 metadata-complete 为 false 或未指定，则必须扫描这两个目录下的注解。
+另外，metadata-complete 为true，并不意味着处理所有注解，而仅仅是列出的注解，其它的不管。
+另外有些注解无论 metadata-complete 的值为何，都要处理。
+ps：看不懂具体是什么注解。
+
+这些注解在 web.xml 都有对应配置：
+javax.servlet.annotation:
+- ■ HttpConstraint
+- ■ HttpMethodConstraint
+- ■ MultipartConfig
+- ■ ServletSecurity
+- ■ WebFilter
+- ■ WebInitParam
+- ■ WebListener
+- ■ WebServlet
+From javax.annotation:
+- ■ PostConstruct
+- ■ PreDestroy
+- ■ Resource
+- ■ Resources
+From javax.annotation.security:
+- ■ DeclareRoles
+- ■ RunAs
+From javax.annotation.sql:
+- ■ DataSourceDefinition
+- ■ DataSourceDefinitions
+……
+
+容器必须支持这些注解 @WebServlet @WebFilter @WebInitParam @WebListener @MultiPartConfig
+### 8.1.1 @WebServlet
+该注解用于声明 Servlet 组件，只能用在继承了 javax.servlet.http.HttpServlet 的类上。
+该注解的 urlPattern 和 value 属性是必填的，其它属性可选。默认的 servlet 名字是类的全限定名。
+value 和 urlPattern 不能同时使用。如果只定义 url 模板，建议使用 value 属性，如果还
+设置了其它属性则建议使用 urlPattern 属性。
+
+如果 web.xml 中同时声明了该类的不同名字的 servlet，容器必须创建新的实例。ps：就是
+会有多个实例喽？。如果通过 ServletContext 提供的 API 同时定义了该类的不同名字的
+servlet，则必须忽略用注解设置到各个属性值，并创建 API 定义的实例。
+Q. 具体不理解。
+> If the same servlet class is added with a different name to the
+ServletContext via the programmatic API defined in Section 4.4.1,
+“Programmatically adding and configuring Servlets” on page 4-35, the attribute
+values declared via the @WebServlet annotation MUST be ignored and a new
+instance of the servlet with the name specified MUST be created.
+
+示例：
+```java
+@WebServlet(”/foo”)
+public class CalculatorServlet extends HttpServlet{
+//...
+}
+
+@WebServlet(name=”MyServlet”, urlPatterns={"/foo", "/bar"})
+public class SampleUsingAnnotationAttributes extends HttpServlet{
+  public void doGet(HttpServletRequest req, HttpServletResponse
+  res) {
+  }
+}
+
+```
+### 8.1.2 @WebFilter
+该注解用于定义 filter，必须用在实现了 javax.servlet.Filter 的类上。
+
+只有属性 value, urlPattern, servletName 是必须的，其余都可选且有默认设置，参见API
+文档。value 和 urlPattern 二者只能且必须设置一个，建议仅指定一定属性的时候使用 value，
+还设置其它属性的时候使用 urlPattern。如果设置 name，则使用 filter 类的全限定名。
+```java
+@WebFilter(“/foo”)
+public class MyFilter implements Filter {
+  public void doFilter(HttpServletRequest req, HttpServletResponse
+  res)
+  {
+  ...
+  }
+}
+```
+Q. 用注解声明的多个 filter，其顺序如何？
+### 8.1.3 @InitParam 注解
+此注解用于 servlet 或 filter 上，为它们设置初始化参数。
+Q. 可以对在 web.xml 内声明的servlet使用此注解设置初始化参数吗？
+
+> This annotation is used to specify any init parameters that must be passed to
+the Servlet or the Filter. It is an attribute of the WebServlet and WebFilter
+annotation
+### 8.1.4 @WebListener
+该注解用于定义事件监听器，只能用在实现了如下接口之一的类上。
+- ■ javax.servlet.ServletContextListener
+- ■ javax.servlet.ServletContextAttributeListener
+- ■ javax.servlet.ServletRequestListener
+- ■ javax.servlet.ServletRequestAttributeListener
+- ■ javax.servlet.http.HttpSessionListener
+- ■ javax.servlet.http.HttpSessionAttributeListener
+- ■ javax.servlet.http.HttpSessionIdListener
+例如：
+```java
+@WebListener
+public class MyListener implements ServletContextListener{
+  public void contextInitialized(ServletContextEvent sce) {
+      ServletContext sc = sce.getServletContext();
+      sc.addServlet("myServlet", "Sample servlet",
+      "foo.bar.MyServlet", null, -1);
+      sc.addServletMapping("myServlet", new String[] {
+      "/urlpattern/*" });
+  }
+}
+```
+### 8.1.5 @MultiPartConfig
+对 servlet 使用此注解，表示 servlet 用于处理 multi-part/form-data 类型的请求。
+
+注解的 location 属性和 multipart-config 元素的 location 子元素的设置的路径，被视作
+绝对路径，且默认值为 javax.servlet.context.tmpdir，若设置相对路径，则是相对于
+javax.servlet.context.tmpdir的。路径是否为绝对路径，由 java.io.File.isAbsolute
+方法判定。
+### 8.1.6 其它注解/约定
+除这些注解之外，在 15.5 中定义的所有注解在这些新注解上下文中仍然有效。
+welcome-file-list 有默认值 index.html 和 index.jsp，可以在 web.xml 的覆盖默认值。
+
+使用注解声明的 servlet、filter 和监听器，其顺序未定义。若要求特定的顺序，就只能
+在 web.xml 中设置，只有那里可以设定顺序。
+
+## 8.2 可插拔性
+## 8.3 JSP 容器插拔
+## 8.4 处理注解和片段
 # 9. 请求转发 *
 dispatching request
 # 10. web 应用 *

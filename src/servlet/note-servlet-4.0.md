@@ -1248,10 +1248,122 @@ welcome-file-list 有默认值 index.html 和 index.jsp，可以在 web.xml 的�
 在 web.xml 中设置，只有那里可以设定顺序。
 
 ## 8.2 可插拔性
+上述注解的引入使得 web.xml 文件变成可选的配置。
+但若要覆盖默认值或者覆盖注解中设置的值，web.xml 就有用了。
+
+另外，为了提高配置的灵活性，引入了新的记号：web 片段。
+ps：web 片段：web module deployment descriptor fragments (web fragment)。
+
+所谓的web片段，是 WEB-INF/lib 下的 jar 包内的 META-INFO/web-fragment.xml 文件。
+这个文件的元素几乎与 web.xml 一样，但必须以 `<web-fragment>` 作为根元素。
+
+多个 jar 包的 web-fragment 和注解之间的顺序是未定义，如果顺序很重要，且看下文分解。
+### 8.2.1 web.xml 和 web-fragment.xml 文件的顺序
+本节说明jar包作者如何声明顺序要求。
+
+在 web-fragment 中指定 name 元素，同时在 web.xml 中指定 absolute-ordering 元素可
+控制顺序；或者在 web-fragment 中指定 ordering 元素（子元素为 befor 和 after）设置
+相对顺序。不论如何，web.xml 和 WEB-INF/classes 的处理顺序都优先于 fragment。
+
+ps:具体规则，用的时候再看吧。
+### 8.2.3 从web.xml、web-fragment、注解中汇编部署描述符
+
+ps：介绍完整描述符的构建规则、冲突时的优先级。
+很长很长的规则，还有简单的示例说明。
+### 8.2.4 共享库
+……
+
 ## 8.3 JSP 容器插拔
+自 servlet 3.0 开始，JSP 容器功能作为 Servlet 容器的插件而实现。……
+
 ## 8.4 处理注解和片段
-# 9. 请求转发 *
+一个表格，metadata-complete 元素+web.xml版本对是否处理注解和web-fragment的影响。
+总结：web.xml 的版本无影响。
+
+# 9. 请求转发
 dispatching request
+
+构建web应用时，时常需要把请求转发到另一个servlet去处理，或者把另一个servlet的响应
+包含进来，RequestDispatcher 接口可以实现这一目的。
+
+异步处理过程中，AsyncContext 接口提供方法，把请求转发回容器中。
+## 9.1 获取 RequestDispatcher
+ServleContext 接口提供两个获取 RequestDispatcher 对象的方法
+- getRequestDispatcher(String path) 指定路径找到对应的servlet，把它封装为 dispatcher返回，若指定路径没有对应的servlet，
+  则取指定路径对应的内容封装为 dispatcher 返回。路径相对于 ServletContext 的根路径，且以"/"开头或者是个空字符串。
+- getNamedDispatcher(String name)   获取指定名称的servlet对应的dispatcher，没有则返回null
+
+ServletRequest 接口提供了 getRequestDispatcher(String path) 方法，用于获取相对于当前 request 的路径的dispatcher对象。
+ps：指定路径时指定相对路径，不要以 / 开头。
+ps：ServletContext.getRequestDispatcher() 的路径是相对于 ServletContext 根路径的。
+
+例如，在以 / 为根路径的 context 中，有路径为 /garden/tools.html 的请求，调用 getRequestDispatcher("header.html")
+等价于调用 ServletContext.getRequestDispatcher("/garden/header.html")。
+
+Q. 怎么不是直接 /garden/tools.html/header.html？
+### 9.1.1 请求转发器路径中的查询参数
+获取 dispatcher 对象时提供的路径中带有的查询参数可以带过去。
+```java
+String path = “/raisins.jsp?orderno=5”;
+RequestDispatcher rd = context.getRequestDispatcher(path);
+rd.include(request, response);
+```
+获取 rd 对象时指定的查询参数，比原 request 中的同名参数优先级更高，且仅在 rd 的 include/forward 方法调用中生效。
+
+
+Q. 是覆盖还是替换？如果原ruquest 有 foo=a&foo=b，获取 rd 时指定了 foo=c，那么最终是
+  foo=c 一项？
+
+## 9.2 使用请求转发
+使用 rd 对象的方式就是调用它的 include 或 forward 对象转发请求，调用时要提供
+request 和 response 对象，或者它们的封装对象。
+
+容器确保转发到的servlet和当前servlet在同一个线程中执行。
+
+Q. 调用 forward 和 include 方法转发请求时，有些 setCharacterEncoding 等方法，岂不是未必生效？
+当前servlet中读取了部分内容，写入了部分内容，转发之后设置的请求编码和响应编码岂不是都不生效了？
+
+## 9.3 include 方法
+可以在任何时刻调用 include 方法，目标servlet可以使用完整的request功能，但对response的使用则受限制。
+只能调用 getOutputStream 或者 getWriter 这两个方法写入数据，并使用 flushBuffer 方法显式提交响应（或者
+写入的数据填满缓冲区也会自动提交，Q. 如果既没有手动刷新也没有写满缓冲，那么目标servlet的service方法结束会
+自动刷新其写入的响应数据吗？）。
+
+目标servlet不能调用setHeader方法或者其它会影响响应首部的方法，但 request.getSession()
+和 request.getSession(boolean) 除外。设置的任何 header 必须忽略掉，在相应提交后调用
+getSession，若导致需要添加首部，必须抛出异常。
+
+>  It cannot set headers or call any method that affects the headers of the response, with
+the exception of the HttpServletRequest.getSession() and
+HttpServletRequest.getSession(boolean) methods. Any attempt to set the
+headers must be ignored, and any call to HttpServletRequest.getSession()
+or HttpServletRequest.getSession(boolean) that would require adding a
+Cookie response header must throw an IllegalStateException if the response
+has been committed.
+
+目标 servlet 是默认servlet时……
+> If the default servlet is the target of a RequestDispatch.include() and the requested
+resource does not exist, then the default servlet MUST throw
+FileNotFoundException. If the exception isn't caught and handled, and the response
+hasn’t been committed, the status code MUST be set to 500.
+### 9.3.1 被包含的请求的参数
+被include方法触发的servlet，可以通过 request.getAttribute() 方法读取下述属性，这些属性
+的值必须反应被包含 servlet 对应的信息，若是递归 include，则这些容器要对应刷新这些属性。
+如果 rd 是通过 servlet 的名称取得的，则这些属性必须为 null。
+Q. 被包含的 servlet，通过 request.getServletPath 获得的是最初的 servlet 的path吗？
+
+```java
+javax.servlet.include.request_uri
+javax.servlet.include.context_path
+javax.servlet.include.servlet_path
+javax.servlet.include.mapping
+javax.servlet.include.path_info
+javax.servlet.include.query_string
+```
+## 9.4 forward 方法
+## 9.5 错误处理
+## 9.6 获取 AsyncContext
+## 9.7 dispatch 方法
 # 10. web 应用 *
 # 11. 应用生命周期事件
 

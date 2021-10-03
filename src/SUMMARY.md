@@ -23,6 +23,7 @@
   - [hello-world](servlet/hello-world.md)
   - [servlet 4.0](servlet/note-servlet-4.0.md)
   - [servlet 编码](servlet/note-encoding.md)
+  - [servlet 路径](servlet/note-path.md)
 # 专题知识
 - [日志](subject/log/Readme.md)
   - [JDKLog](subject/log/jdk-log.md)

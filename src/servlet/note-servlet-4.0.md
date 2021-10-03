@@ -415,7 +415,13 @@ ps：路径参数，意思在路径中包含参数`http://foo.com/book/{name}`�
 若条件不满足且post保单数据未被包含进参数集合中，则要保证servlet能从request对象
 的输入流中读取表单数据。若条件已满足，则表单数据不能直接request对象的输入流取得。
 
+> Path parameters that are part of a GET request (as defined by HTTP 1.1) are not
+exposed by these APIs. They must be parsed from the String values returned by the
+getRequestURI method or the getPathInfo method.
+
 测试，请求方式为 HTTP GET 时，servlet 同样能从上述API获取请求参数
+Q. 这和规范中说的不一致呀？
+
 ```bash
 curl "localhost:8080/servlet-hello/parameter-demo?foo=bar"   -v
 *   Trying ::1:8080...
@@ -460,7 +466,7 @@ $ curl "localhost:8080/servlet-hello/parameter-demo?a=b" -d foo=bar -H "Content-
 
 a:[b]
 ```
-Q. 这和规范中说的不一致呀？
+
 ## 3.2 上传文件
 servlet 容器允许客户端使用 multipart/form-data 方式上传文件。
 
@@ -535,6 +541,16 @@ ps：getDateHeader 返回自 EPOCH 以来的毫秒数。
 
 还举了一个例子。
 
+- ps: getPathInfo 返回的是 servlet path 之后，query 字符串之前的部分。
+- ps：要取得查询字符串，要用 getQueryString(), 该方法返回查询字符串，或 null。
+
+- getRequestURL   返回请求对应的完整URL，包括协议、主机、端口、路径，不包括查询字符串。Q. 未说明是否解码
+- getRequestURI   不解码，返回请求的路径部分：不考虑编解码的差异，有：requestURI = contextPath + servletPath + pathInfo
+- getContextPath  不解码。以 / 开头且不以 / 结尾。若为默认app（ROOT app）则返回空字符串
+- getServletPath  解码。  返回app下对应到此servlet的路径，以 / 开头。若通过 /* 模板匹配到此 servlet，则返回 ""
+- getPathInfo     解码，无则为null。servlet path 之后，查询字符串之前的部分。
+- getQueryString  不解码，无则为null。URL 路径中的查询字符串。
+
 ## 3.6 翻译路径的方法
 提供了两个把路径转换为本地路径的方法
 - ServletContext.getRealPath
@@ -584,7 +600,7 @@ cookie 是每次请求都会携带的信息，通常带回来的只有 cookie �
 ServletRequest的 getLocale 和 getLocales 方法可以获取这些信息。
 如果客户端没有指定，容器必须返回容器的默认locale。
 
-## 3.12 请求数据的编码
+## 3.12 请求数据的编码字符集
 当前，客户端发送请求时设置的 Content-Type 大都没有指定字符集编码。如此服务端解码
 客户端请求时使用的编码方案就自行决定了。
 
@@ -1348,7 +1364,7 @@ FileNotFoundException. If the exception isn't caught and handled, and the respon
 hasn’t been committed, the status code MUST be set to 500.
 ### 9.3.1 被包含的请求的参数
 被include方法触发的servlet，可以通过 request.getAttribute() 方法读取下述属性，这些属性
-的值必须反应被包含 servlet 对应的信息，若是递归 include，则这些容器要对应刷新这些属性。
+的值必须反应目标 servlet 对应的信息，若是递归 include，则这些容器要对应刷新这些属性。
 如果 rd 是通过 servlet 的名称取得的，则这些属性必须为 null。
 Q. 被包含的 servlet，通过 request.getServletPath 获得的是最初的 servlet 的path吗？
 
@@ -1360,7 +1376,55 @@ javax.servlet.include.mapping
 javax.servlet.include.path_info
 javax.servlet.include.query_string
 ```
+
+> Except for servlets obtained by using the getNamedDispatcher method, a servlet that
+has been invoked by another servlet using the include method of
+RequestDispatcher has access to the path by which it was invoked.
+
+> These attributes are accessible from the included servlet via the getAttribute
+method on the request object and their values must be equal to the request URI,
+context path, servlet path, path info, and query string of the included servlet,
+respectively. If the request is subsequently included, these attributes are replaced
+for that include.
+
 ## 9.4 forward 方法
+仅当尚未向客户端发送任何数据时才可以调用此方法，否则抛出 IllegalStateException。
+若调用时响应缓冲区存在数据未提交，则目标servlet的service方法执行之前，缓冲区数据
+必须先清空。
+
+目标 servlet 的 request 对象的路径元素必须反应构造 dispatcher 的路径，除非
+使用的 servlet 名称构造的 dispatcher，此时要反应原 servlet 的路径。
+
+若目标 servlet 顺利执行，返回之前，容器必须把目标 servlet 的响应数据发送回客户端，
+除非是异步处理模式。若有异常，异常可以传播回当前 servlet，直至容器。
+### 9.4.1 查询字符串
+转发时，转发机制要负责把查询字符串参数一并带过去。
+> The request dispatching mechanism is responsible for aggregating query string
+parameters when forwarding or including requests.
+### 9.4.2 被转发的参数
+除非是通过 servlet 名字获取的 dispatcher，否则 forward 转发到的目标 servlet 都能
+取得原始请求的路径。
+必须设置如下请求属性：
+```
+javax.servlet.forward.mapping
+javax.servlet.forward.request_uri
+javax.servlet.forward.context_path
+javax.servlet.forward.servlet_path
+javax.servlet.forward.path_info
+javax.servlet.forward.query_string
+```
+这些属性必须反应原始请求的路径（也就是客户端使用的路径）。
+通过 servlet 名称获取的参数，这些属性不得设置。
+
+> Except for servlets obtained by using the getNamedDispatcher method, a servlet that
+has been invoked by another servlet using the forward method of
+RequestDispatcher has access to the path of the original request.
+
+> The values of these attributes must be equal to the return values of the
+HttpServletRequest methods getRequestURI, getContextPath, getServletPath,
+getPathInfo, getQueryString respectively, invoked on the request object passed to
+the first servlet object in the call chain that received the request from the client.
+
 ## 9.5 错误处理
 ## 9.6 获取 AsyncContext
 ## 9.7 dispatch 方法

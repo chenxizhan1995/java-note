@@ -1426,8 +1426,56 @@ getPathInfo, getQueryString respectively, invoked on the request object passed t
 the first servlet object in the call chain that received the request from the client.
 
 ## 9.5 错误处理
+目标 servlet 抛出运行时异常或者 ServletException/IOException 类型的受检异常时，必须
+传递到调用者 servlet 处理。任何其它异常不得直接传递，而是都必须封装为 ServletException
+后传递。
+
+> If the servlet that is the target of a request dispatcher throws a runtime exception or
+a checked exception of type ServletException or IOException, it should be
+propagated to the calling servlet. All other exceptions should be wrapped as
+ServletExceptions and the root cause of the exception set to the original exception,
+as it should not be propagated
 ## 9.6 获取 AsyncContext
+
+AsyncContext 下，可以通过调用 complete 方法直接完成请求的处理，也可以通过下文所述
+的 diapatch 方法处理请求。
+
 ## 9.7 dispatch 方法
+- dispatch(path)    路径必须以 / 开头，相对于 servletContext 的根路径。
+- dispatch(servletContext, path)  同上，但相对于指定的  servletContext 指定路径
+- dispatch()        使用原始URI作为路径。
+  若异步上下文是通过 startAsync(request, response) 初始化的，且 request 对象是
+  HttpServletRequest 实例，则uri就是 request.getRequestURI() 的返回值，否则
+  Q. 这句话看不懂
+  > Otherwise the dispatch is to the URI of the request when it was last
+  dispatched by the container。
+
+必须在调用 complete() 方法之前使用 dispatch 方法，否则是 IllegalStateException.
+
+关于路径：
+> The path elements of the request object exposed to the target servlet must reflect the
+path specified in the AsyncContext.dispatch.
+### 9.7.1 查询字符串
+查询字符串要带过去
+> The request dispatching mechanism is responsible for aggregating query string
+parameters when dispatching requests.
+### 9.7.2 请求参数
+目标servlet 可以访问请求的原始路径。
+```
+javax.servlet.async.mapping
+javax.servlet.async.request_uri
+javax.servlet.async.context_path
+javax.servlet.async.servlet_path
+javax.servlet.async.path_info
+javax.servlet.async.query_string
+```
+
+这些属性必须设置，且必须返回最初被调用的servlet看到的值。
+> The values of these attributes must be equal to the return values of the
+HttpServletRequest methods getRequestURI, getContextPath, getServletPath,
+getPathInfo, getQueryString respectively, invoked on the request object passed to
+the first servlet object in the call chain that received the request from the client.
+
 # 10. web 应用 *
 # 11. 应用生命周期事件
 

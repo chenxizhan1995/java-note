@@ -29,6 +29,9 @@
 - [日志](subject/log/Readme.md)
   - [JDKLog](subject/log/jdk-log.md)
 - [Java I/O](subject/java-io/Readme.md)
+  - [标准IO](subject/java-io/stdio.md)
+  - [NIO](subject/java-io/nio.md)
+
 # 随手笔记
 
 + [Tomcat 中的日志](misc/tomcat-logging.md)

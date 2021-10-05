@@ -73,3 +73,5 @@ TODO：有时间把这些拆成多个笔记。
 本笔记使用[mdBook][]维护。
 
 [mdBook]:https://rust-lang.github.io/mdBook
+## TODO
+- java 加载资源文件，classLoader.loadAsStream 等

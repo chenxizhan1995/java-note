@@ -70,7 +70,7 @@ InputStream 类的方法
 - int    readNBytes(byte[] buf, int offset, int size)
 - void reset()  将输入指针重置到之前使用 mark() 设置的标记处
 - long skip(long numBytes)  跳过接下来的 numBytes 个字节
-- Long transferTo(OutputStream out) 把流中的数据复制到输出流，返回成功复制的字节数。since JDK 9
+- long transferTo(OutputStream out) 把流中的数据复制到输出流，返回成功复制的字节数。since JDK 9
 
 OutputStream 类的方法
 
@@ -185,5 +185,47 @@ try (InputStream fin = new FileInputStream(filePath)){
 }
 ```
 ### demo: CopyFile 复制文件
-
+```java
+{{#include ../code/basic/ch10-io/CopyFile.java}}
+```
 ## 使用字符流
+### Reader 和 Writer 定义的方法
+Reader
+- void close()    关了它
+- void mark(int numChars)  打个标记
+- boolean markSupperted()  是否支持 mark/reset
+- Static Reader nullReader()  空的字符流。JDK 11
+- `int raed()`      读入一个字符，返回 -1 表示到达字节流末尾
+- `int read(char[] buf)`  尝试读取 buf.length 个字符，返回实际读取的字符数，返回 -1 表示已经到达字节流末尾
+- `abstract int read(char[] buf, int offset, int size)`  尝试读入 size 个字符到 buf 中 以 buf[offset] 开始的位置，返回实际读取的
+                  字符数，返回 -1 表示一到达字节流末尾
+- boolean ready()   如果下个输入请求能够不等待就返回 true，否则返回 false
+- void reset()    将输入指针重置到前面设定的标记
+- long skip(long numChars) 跳过接下来的 numChars 个字符，返回实际跳过的字符数
+- long transferTo(Writer writer)  将输入流的内容复制到输出流，返回实际复制的字符数。JDK 10 新增
+
+Writer
+
+
+- Writer append(char ch)
+- Writer append(Charsequence chars)
+- Writer append(Charsequence chars, int begin, int end)
+ps：这三个是 fluent 风格的 api
+PS: Charsequence 是一个接口，其子类有 CharBuffer, Segment, String, StringBuffer, StringBuilder
+
+- void close()
+- void flush()
+- static Writer nullWriter()  返回一个输出字符流，它忽略任何写入的数据
+- void write(int ch)      写入单个字符，注意参数是 int 类型，但只写入低16位。无需强制转换为 char
+- void write(char buffer[])
+- void write(char[] buf, int offset, int size)
+- void write(String str)
+- void write(String str, int offset, int size)
+PS: 字符流和字节流的输出流的 write 方法返回值都是 void 类型。
+
+### Demo：文件复制
+```java
+{{#include ../code/basic/ch10-io/CopyTxt.java}}
+```
+
+Q. 字符流对文件中的换行符有特殊处理吗？

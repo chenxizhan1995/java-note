@@ -193,3 +193,124 @@ FileFilter 只有一个方法
 ## OutputStream 略
 ## FileInputStream
 读写方法都是基类定义的那几个。
+
+构造函数
+- FileInputStream​(File file)
+- FileInputStream​(String name)
+
+使用 File 类作为参数的，可以预先执行一些测试，比如判断文件是否存在。
+
+## FileOutputStream
+## ByteArrayInputStream
+构造函数有两个
+- ByteArrayInputStream​(byte[] buf)
+- ByteArrayInputStream​(byte[] buf, int offset, int length)
+都需要字节数据来提供数据源。
+close() 方法对 ByteArrayInputStream 没有效果，所有没有必要调用它，但调用了也不会报错。
+```java
+import java.io.*;
+
+public class ByteArrayInputStreamDemo{
+    public static void main(String[] args){
+        String s = "abcdefghijklmnopqrstuvwxyz";
+
+        byte[] b = s.getBytes();
+
+        ByteArrayInputStream input1 = new ByteArrayInputStream(b);
+        ByteArrayInputStream input2 = new ByteArrayInputStream(b, 0, 3);
+    }
+}
+```
+第二个输入流只有前三个字符。
+
+ByteArrayInputStream 实现了 mark 和 reset 方法，如果没有调用 mark 直接调用了 reset，就会回到输入流开头。
+
+```java
+import java.io.ByteArrayInputStream;
+
+/**
+ * <p> Description: 这个程序从流读取内容并输出，然后重置输入流并再次输出，这次会把字母转为大写之后再输出。</p>
+ */
+public class ByteArrayInputStreamReset {
+    public static void main(String[] args) {
+        String tmp = "abcdefghijklmn";
+        byte[] b = tmp.getBytes();
+        ByteArrayInputStream in = new ByteArrayInputStream(b);
+
+        for (int i = 0; i< 2; i++){
+            int bt;
+            while ((bt = in.read()) != -1){
+                if (i == 0){
+                    System.out.write(bt);
+                } else {
+                    System.out.write(Character.toUpperCase((char)bt));
+                }
+            }
+            System.out.println();
+            in.reset();
+        }
+        System.out.flush();
+    }
+}
+```
+
+## ByteArrayOutputStream
+
+close() 方法对 ByteArrayOutputStream 没有效果，所有没有必要调用它，但调用了也不会报错。
+
+## 过滤的字节流
+过滤的字节流 FilterInputStream 和 FilterOutputStream  是一些简单的封装器，用于封装底层的输入输出流。
+它们分别是 InputStream 和 OutputStram 的子类。
+它们的典型子类有：BufferedInputStram 和 DataInputStream
+
+## 缓冲的流
+缓冲流通过为底层流附加缓冲区来提高IO性能。
+同时因为使用了缓冲区，所以跳过、标记和重置方法都可以支持了。
+缓冲流的类是 BufferedInputStream 和 BufferedOutputStream。PushbackInputStream 也
+具有缓冲。
+
+输入缓冲流有两个构造函数，第一个使用默认的缓冲区大小，第二个使用指定的缓冲区大小，经典的参数是 8192.
+- BufferedInputStream​(InputStream in)
+- BufferedInputStream​(InputStream in, int size)
+
+输出缓冲也有两个构造函数
+- BufferedOutputStream​(OutputStream out)
+- BufferedOutputStream​(OutputStream out, int size)
+
+PushBackInputStream 可以“偷窥”输入流接下来的若干字符而不影响输入流。
+
+## SequenceInputStream
+可以将多个输入流合并为一个。当读取的时候，依次从第一个输入流读取，然后是第二个。
+
+- SequenceInputStream​(InputStream s1, InputStream s2)
+- SequenceInputStream​(Enumeration<? extends InputStream> e)
+## PrintStream
+是 FilterOutputStream 的子类。
+经常使用的 Sytem.out 和 System.err 就是此类的实例。
+
+可以输出到底层流
+- PrintStream​(OutputStream out)
+- PrintStream​(OutputStream out, boolean autoFlush)
+- PrintStream​(OutputStream out, boolean autoFlush, String encoding)
+- PrintStream​(OutputStream out, boolean autoFlush, Charset charset)
+指定字符集，在输出字符和字符串的时候就可以使用指定字符集解码。
+Q. 不指定字符集的时候呢？
+
+可以直接输出到文件
+
+- PrintStream​(File file)
+- PrintStream​(File file, String csn)
+- PrintStream​(File file, Charset charset)
+
+- PrintStream​(String fileName)
+- PrintStream​(String fileName, String csn)
+- PrintStream​(String fileName, Charset charset)
+
+这个类对所有的基本类型和String类型都提供了 print 和 println 方法，输出的是适合人类阅读的格式。
+如果不是基本类型，会调用它的 toString 方法后再输出。
+对于 char 数组还提供了重载的 print 和 println，直接输出字符串形式。
+对于其它数组，则调用toString，输出的是一串看不懂的的东西。
+
+TODO：对于字符和字符串，会根据字符集解码吗？试试看。
+基本类型，即使解码，也是ASCII字符，都是兼容的，区分不出来，但对于汉字就不同了。
+## 待续

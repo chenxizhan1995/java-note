@@ -207,7 +207,6 @@ Reader
 
 Writer
 
-
 - Writer append(char ch)
 - Writer append(Charsequence chars)
 - Writer append(Charsequence chars, int begin, int end)

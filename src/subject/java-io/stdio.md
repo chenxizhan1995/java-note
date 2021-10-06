@@ -201,6 +201,8 @@ FileFilter 只有一个方法
 使用 File 类作为参数的，可以预先执行一些测试，比如判断文件是否存在。
 
 ## FileOutputStream
+有个重载版本的构造函数，有个append参数。
+- FileOutputStream​(String name, boolean append)
 ## ByteArrayInputStream
 构造函数有两个
 - ByteArrayInputStream​(byte[] buf)
@@ -261,7 +263,7 @@ close() 方法对 ByteArrayOutputStream 没有效果，所有没有必要调用�
 ## 过滤的字节流
 过滤的字节流 FilterInputStream 和 FilterOutputStream  是一些简单的封装器，用于封装底层的输入输出流。
 它们分别是 InputStream 和 OutputStram 的子类。
-它们的典型子类有：BufferedInputStram 和 DataInputStream
+它们的典型子类有：BufferedInputStram 和 DataInputStream，BufferedOutputStream，DataOutputStream。
 
 ## 缓冲的流
 缓冲流通过为底层流附加缓冲区来提高IO性能。
@@ -313,4 +315,99 @@ Q. 不指定字符集的时候呢？
 
 TODO：对于字符和字符串，会根据字符集解码吗？试试看。
 基本类型，即使解码，也是ASCII字符，都是兼容的，区分不出来，但对于汉字就不同了。
-## 待续
+```java
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+
+/**
+ * <p> Description: </p>
+ */
+public class PrintStreamDemo {
+    public static void main(String[] args) throws UnsupportedEncodingException {
+        PrintStream psu = new PrintStream(System.out, true, "UTF-8");
+        PrintStream psg = new PrintStream(System.out, true, "GBK");
+        psu.println(123);
+        psg.println(123);
+        psu.println('国');
+        psg.println('国');
+    }
+}
+```
+
+Windows 下执行：
+```
+123
+123
+国
+��
+```
+
+Linux 下运行
+```
+123
+123
+国
+��
+```
+Q. 不合理呀，怎么能Windows 和Linux都是GBK编码的输出是乱码呢？
+原来是Windows下的IDEA配置默认编码为UTF-8，直接使用命令行执行这个文件，结果就和预期
+相符了。
+```
+F:\java\java-demo\java-basic>java -cp target\classes cc.xizhan.io.PrintStreamDemo
+123
+123
+鍥
+国
+```
+## 数据输入输出流
+DataInputStream 和 DataoutpuStream 是过滤流的直接子类且实现了 DataInput/DataOutput接口，
+这两个接口定义了将基本类型转换为字节序列或者将字节序列转换为基本类型的值的方法。
+
+ps：因为是过滤流，所以构造函数接受基本输入/输出流作为底层流。
+
+并定义 writeInt, writeDouble 系列的方法。
+## RandomAccessFile
+这个类支持以读写模式打开文件，支持跳转到指定的位置。
+它不是InputStream或者OutputStream的子类，而是实现了 DataInput 和 DataOutput 接口。
+
+## 字符流
+字符流的基类为 Reader 和 Writer 两个。
+字符流的类和字节流类基本对应，但是继承层次略有差异。
+
+首先字符流定义了直接子类 InputStreamReader 和 OutputStreamWriter 作为字符流和字节流
+之间的桥梁。
+接着，文件流 FileReader 和 FileWriter 不是直接作为 Reader 和 Writer 的子类，而是作为
+InputStreamReader 和 OuputStreamWriter 的直接子类；这和字节流的结构不同。
+有定义 FilterReader 和 FilterWriter，但没有直接子类，同时 BufferedReader 和
+BufferedWriter 和 PrintWriter 作为 Reader 和 Writer 的直接子类，这也和字节流的继承结构不同，
+在字节流中这三个类都是 FilterXXXStream 的子类。
+
+CharArrayReader 和 CharArrayWriter 是 Reader 和 Writer 的直接子类，这点和字节流相同。
+
+## Reader 略
+## Writer 略
+## FileReader 略
+## FileWriter
+有个重载版本的构造函数有个 append 参数。
+
+- FileWriter​(File file, boolean append)
+
+## CharArrayWriter
+- CharArrayWriter()
+- CharArrayWriter​(int initialSize)
+- int 	size() 	        Returns the current size of the buffer.
+- char[] 	toCharArray() 	        Returns a copy of the input data.
+- String 	toString() 	        Converts input data to a string.
+
+
+- ByteArrayOutputStream()
+- ByteArrayOutputStream​(int size)
+
+- int 	size() 	        Returns the current size of the buffer.
+- byte[] 	toByteArray() 	        Creates a newly allocated byte array.
+- String 	toString() 	        Converts the buffer's contents into a string decoding bytes using the platform's default character set.
+- String 	toString​(String charsetName) Converts the buffer's contents into a string by decoding the bytes using the named charset.
+## 附：Demo：借助 DataOutputStream 获取double类型的二进制格式
+```java
+{{#include code/DoubleToBinary.java}}
+```

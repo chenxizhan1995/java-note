@@ -24,10 +24,11 @@
 
 - 注解
   - 语法
-  - 自动继承 java.lang.annotation.Annotation 接口
+  - 自动继承 java.lang.annotation.Annotation 接口；同时注解声明不能包含 extends 子句
   - 标记注解是什么？不带形参的注解是标记注解。ps：就是`形参`.
-- 枚举常量一般用 PASCAL_STYLE，这只是约定，并没有语法约束。
 
+
+- 枚举常量一般用 PASCAL_CASE，这只是约定，并没有语法约束。
 - 枚举和 final 变量各有所长，并不互相替代。
 ## 枚举基础
 
@@ -58,3 +59,26 @@ String toString() 方法，返回枚举常量的字符串形式，二者的区�
 
 枚举还定义了 final int ordinal() 方法，它返回枚举常量的索引，从 0 开始，递增。
 int compareTo(E e) 按 ordinal 进行比较。
+
+## Number、构造函数、valueOf
+八种基本类型对应的封装类分别是：Byte、Short、Integer、Long、Float、Double、Character、Boolean。
+
+其中 Byte、Short、Integer、Long、Float、Double 都有公共的父类 java.lang.Number，这个
+类定义了一系列到基本类型数值的方法：
+
+- byte byteValue()
+- short shortValue()
+- int intValue()
+- long longValue()
+- float floatValue()
+- double doubleValue()
+
+这六种数值类型，都提供了两个构造函数，用于从字符串或基本类型值构造对应的包装类型。
+- Long(long)
+- Long(String longStr)  如果不是数值，则抛出 NumberFormatException
+
+JDK 9 开始，这六个包装器类的构造函数标记为弃用，同时提供了同样参数的静态 valueOf() 方法。
+- public static Long valueOf(long)
+- public static Long valueOf(String longVal)
+
+

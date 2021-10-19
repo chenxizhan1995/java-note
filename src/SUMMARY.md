@@ -16,6 +16,7 @@
   - [异常处理](basic/chapter-9-异常处理.md)
   - [使用IO](basic/chapter-10-使用IO.md))
   - [多线程程序设计](basic/chapter-11-多线程.md)
+  - [枚举-装箱-静态导入-注解](basic/chapter-12-枚举-装箱-静态导入-注解.md)
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
   - [重载、重写、隐藏](basic/misc/重写-重载-隐藏.md)
@@ -29,6 +30,7 @@
 # 专题知识
 - [日志](subject/log/Readme.md)
   - [JDKLog](subject/log/jdk-log.md)
+  - [Log4j2](subject/log/log4j2.md)
 - [Java I/O](subject/java-io/Readme.md)
   - [标准IO](subject/java-io/stdio.md)
   - [NIO](subject/java-io/nio.md)

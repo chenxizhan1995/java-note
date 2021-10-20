@@ -18,6 +18,8 @@
   - [多线程程序设计](basic/chapter-11-多线程.md)
   - [枚举-装箱-静态导入-注解](basic/chapter-12-枚举-装箱-静态导入-注解.md)
   - [泛型](basic/chapter-13-泛型.md)
+  - [lambda表达式和方法引用](basic/chapter-14-lambda表达式.md)
+  - [模块](basic/chapter-15-模块.md)
 - [基础知识点](basic/misc/Readme.md)
   - [类型转换](basic/misc/类型转换.md)
   - [重载、重写、隐藏](basic/misc/重写-重载-隐藏.md)

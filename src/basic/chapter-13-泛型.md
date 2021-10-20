@@ -25,9 +25,10 @@
 - Java 的泛型通过类型擦除+适当的隐式强制类型转换而实现，同一个泛型类，编译器不会创建不同的类型实例，只有一个类型
 
 - Q. 上界、下界、继承关系
-- Q. 可以同时声明上下界吗？`<T super Type extends Type2>`
+- Q. 可以同时声明上下界吗？`fun(Gen<? super Type extends Type2> p)`
+  Ans: 不能。报错。
 - Q. 类型形参可以指定下界吗？`class Box<T super Type>`
-
+  Ans：不能。
 - 泛型和子类型
 ## 原类型和遗留代码
 
@@ -107,3 +108,100 @@ List<String> ls = lo; // incompatible types: List<Object> cannot be converted to
 lo.add(new Object());
 String s = ls.get(0); // Runtime Error
 ```
+## ext: 为什么不允许创建泛型实例数组？
+
+Java 中任何类型 T 的数组 T[] 都可以向上转型为其父类 S 型的数组 S[]。
+```java
+String[] strArr = new String[5];
+Object[] objArr = strArr;   // 符合语法规则
+// 符合语法规则，编译通过，但运行时会抛出 ArrayStoreException
+objArr[0] = Integer.valueOf(1);
+```
+
+有办法hack出来类似的泛型数组骗过编译器的，不过那样运行时一样会出错。
+泛型在设计上被称为不可具体化类型，如果允许它生成具体化类型的数组，在擦除之后会
+发生经典的“猫插入狗列表”的问题。这是一个不易发现的逻辑错误，所以Java的决策者当机立断不允许这么做。
+
+唯一绕过限制，创建泛型数组的方式，是先创建一个原生类型数组，然后再强制转型。
+```java
+List<Integer>[] ga = (List<Integer>[])new ArrayList[10];
+```
+
+PS：猫插入狗列表问题：
+> Java会在编译后将范型的类型信息抹掉，如果Java允许我们使用类似
+`Map<Integer, String>[] mapArray = new Map<Integer, String>[20];`的语句，
+我们在随后的代码中可以把它转型为Object[]然后往里面放`Map<Double, String>`实例。
+这样做不但编译器不能发现类型错误，就连运行时的数组存储检查对它也无能为力，它能看到的
+是我们往里面放Map的对象，我们定义数组时指定的信息`<Integer, String>`在编译时已经
+被抹掉了，于是而对它而言，只要是Map，都是合法的。想想看，我们本来定义的是装
+`Map<Integer, String>`的数组，结果我们却可以往里面放任何Map，接下来如果有代码
+试图按原有的定义去取值，后果是什么不言自明。
+
+PPS：存入的时候能存，但取出数组时会报告运行时错误：ClassCastException
+
+## ext2：堆污染
+Heap pollution(堆污染)
+
+当把一个不带泛型的对象赋值给一个带泛型的变量时, 就有可能发生堆污染.
+
+堆污染在编译时并不会报错, 只会在编译时提示有可能导致堆污染的警告. 在运行时,如果
+发生了堆污染, 那么就会抛出类型转换异常.
+
+上面的猫插入狗列表就是一种堆污染。
+
+## ext3：堆污染和@SafeVarargs
+```java
+public class ArrayBuilder {
+
+  public static <T> void addToList (List<T> listArg, T... elements) {
+    for (T x : elements) {
+      listArg.add(x);
+    }
+  }
+  public static void faultyMethod(List<String>... l) {
+    Object[] objectArray = l;     // Valid
+    objectArray[0] = Arrays.asList(42);
+    String s = l[0].get(0);       // ClassCastException thrown here
+  }
+}
+
+public class HeapPollutionExample {
+
+  public static void main(String[] args) {
+
+    List<String> stringListA = new ArrayList<String>();
+    List<String> stringListB = new ArrayList<String>();
+
+    ArrayBuilder.addToList(stringListA, "Seven", "Eight", "Nine");
+    ArrayBuilder.addToList(stringListB, "Ten", "Eleven", "Twelve");
+    List<List<String>> listOfStringLists =
+      new ArrayList<List<String>>();
+    ArrayBuilder.addToList(listOfStringLists,
+      stringListA, stringListB);
+
+    ArrayBuilder.faultyMethod(Arrays.asList("Hello!"), Arrays.asList("World!"));
+  }
+}
+```
+编译时，ArrayBuilder.addToList 方法的定义产生以下警告：
+
+warning: [varargs] Possible heap pollution from parameterized vararg type T
+
+当编译器遇到 varargs 方法时，会将 varargs 形式参数转换为数组。在方法
+ArrayBuilder.addToList 中，编译器形参 T... elements 转换为 T[] elements，由于
+类型擦除，最终变为 Object[] elements，这样存在堆污染的可能性。
+
+如果你定义了可变的参数化方法，并且能保证该方法体不会抛出ClassCastException异常，你可以通过下面一些选项来消除警告
+- 添加下面的注解  `@SafeVarargs`
+- 添加下面的注解  `@SuppressWarnings({"unchecked", "varargs"})`
+- 使用编译选项    `-Xlint:varargs`
+
+ps：对于 ArrayBuilder.addToList，如果不加注解，编译时会有两个警告：
+1.  在方法定义：[unchecked] Possible heap pollution from parameterized vararg type T
+2.  在方法调用：`[unchecked] unchecked generic array creation for varargs parameter of type List<String>[]`
+如果在定义处使用 `@SafeVarargs` 注解，这两个警告都不会有。
+如果在定义处使用 `@SuppressWarnings({"unchecked", "varargs"})`注解，则不会有第一个警告，但第二个警告仍然有。
+
+> 在java SE 5和6，程序员需要保证他调用的方法不会Heap Pollution发生，如果这个方法不是这个程序员写的，这很难保证，
+但在java SE 7中，可保证不会发生Heap Pollution！
+Q. JSE7 如何保证这一点的？

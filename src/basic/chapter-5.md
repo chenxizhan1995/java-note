@@ -223,3 +223,19 @@ if ((status & 1) != 8); // 这里的括号是必须的，否则 status & 1 != 8 
 
 a + b >> c & d + e 等价于 `((a+b) >> c) & (d + e)`
 ```
+## ext：数组的继承关系
+2021-10-20
+根据JLS8 4.10.3，
+
+- 对于引用类型 S 和 T, 有：S[] >1 T[] iff S >1 T
+- Object >1 Object[]
+- Cloneable >1 Object[]
+- java.io.Serializable >1 Object[]
+
+- 对于基本类型 P, 有
+  - Object >1 P[]
+  - Cloneable >1 P[]
+  - java.io.Serializable >1 P[]
+
+
+记号 S >1 T 的含义是： S 是 T 的直接父类类型。

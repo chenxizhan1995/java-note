@@ -75,3 +75,5 @@ TODO：有时间把这些拆成多个笔记。
 [mdBook]:https://rust-lang.github.io/mdBook
 ## TODO
 - java 加载资源文件，classLoader.loadAsStream 等
+
+- java.util.pref:[Java-Preferences用法-入门 - pzy4447 - 博客园](https://www.cnblogs.com/pzy4447/p/4710539.html)

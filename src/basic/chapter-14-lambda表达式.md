@@ -109,6 +109,27 @@ Fun add = new Fun{
 - 实例方法引用：TypeName::methodName  对标 fun(TypeName, ...) 的接口方法，用于调用任意实例的实例方法
 - 构造器引用：  TypeName::new         对标 TypeName fun(...) 的接口方法
 
+静态方法引用，假设函数式接口签名为 `type fun(Type1 param1, Type2, param2);`，那
+静态方法引用要求静态方法的返回值和参数列表完全一致（或者兼容）。
+
+实例方法引用，obj::methodName，要求返回值和参数列表一致。
+调用时对应关系为：`fun(arg1, arg2)  --> obj.methdoName(arg1, arg2);`
+
+实例方法引用 `Type1::methodName`，要求返回值一致，函数式接口的第一个参数匹配调用对象，后续参数
+匹配 methodName 的参数，（也就是 methodName 方法中的 this 会是函数式接口的第一个参数）。
+调用时，对应关系为：`fun(arg1, arg2) ---> arg1.methodName(arg2)`。
+
+构造器引用，返回值类型和参数列表匹配，就可以。
+
+### ext：
+数组的构造函数引用：`type[]::new`。
+方法 `type[] fun(int n)`，可以对应 `type[]::new`.
+一般，如果某个函数式接口要引用数组构造函数，那么该方法只接受一个int类型的参数。
+
+PS：可以引用多维数组构造函数吗？
+Ans: 实测可以，形如 `intp[][]::new`，但是它对应的函数式接口形式为：
+`int[][] apply(int m);`，而不是想象中的`int[][] apply(int m, int n);`
+
 ## 变量捕获
 lambda表达式可以使用和修改所在类的实例变量、静态变量，调用所在类的方法；可以访问
 但只能访问 effective final 的局部变量。

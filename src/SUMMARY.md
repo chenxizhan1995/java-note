@@ -37,7 +37,8 @@
 - [Java I/O](subject/java-io/Readme.md)
   - [标准IO](subject/java-io/stdio.md)
   - [NIO](subject/java-io/nio.md)
-
+- [misc](subject/java-misc.md)
+  - [类路径和模块路径](subject/misc/path.md)
 # 随手笔记
 
 + [Tomcat 中的日志](misc/tomcat-logging.md)
